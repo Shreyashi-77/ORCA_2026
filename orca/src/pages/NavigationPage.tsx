@@ -65,6 +65,42 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
   const [pfzLoading, setPfzLoading] = useState(false);
 
   const DEMO_PFZ_DATA: Record<string, any> = {
+    "pfzlines.22": {
+      pfz_id: "PFZ-22",
+      nearest_point: {
+        latitude: 21.30296939,
+        longitude: 69.11953144,
+      },
+      distance_km: 52.4,
+      safety: {
+        overall_status: "caution",
+        warnings: ["Moderate wave conditions"],
+      },
+      weather: {
+        wind: "20 km/h",
+        waves: "1.9 m",
+        temp: "28°C",
+      },
+    },
+    "pfzlines.27": {
+      pfz_id: "PFZ-27",
+      // Actual point ON PFZ-27 (first coordinate from the supplied line)
+      nearest_point: {
+        latitude: 19.45139181,
+        longitude: 72.11015701,
+      },
+      // Demo value; the supplied PFZ line reports Length: 71.3758189277 km
+      distance_km: 71.4,
+      safety: {
+        overall_status: "caution",
+        warnings: ["Moderate wave conditions"],
+      },
+      weather: {
+        wind: "20 km/h",
+        waves: "1.9 m",
+        temp: "28°C",
+      },
+    },
     "pfzlines.1": {
       pfz_id: "PFZ-1",
       nearest_point: {
