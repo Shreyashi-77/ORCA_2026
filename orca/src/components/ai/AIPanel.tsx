@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { AiChat02Icon, ArrowRight01Icon, Mic01Icon, Cancel01Icon, ShipIcon } from '@hugeicons/core-free-icons'
+import { AiChat02Icon, ArrowRight01Icon, Mic01Icon, Cancel01Icon, ShipIcon, Menu04Icon } from '@hugeicons/core-free-icons'
 import { useLanguage } from '@/lib/i18n'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import {
@@ -42,7 +42,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
   const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem('orca_session_id'))
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
-  const [showHistory, setShowHistory] = useState(true)
+  const [showHistory, setShowHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const requestControllerRef = useRef<AbortController | null>(null)
@@ -266,6 +266,13 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
       {/* Header */}
       <div className="relative z-30 flex items-center justify-between p-4 border-b border-border/40 bg-card/50">
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowHistory((visible) => !visible)} 
+            className="p-2 -ml-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Toggle history"
+          >
+            <HugeiconsIcon icon={Menu04Icon} size={24} />
+          </button>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <HugeiconsIcon icon={AiChat02Icon} size={20} className="text-white" />
           </div>
@@ -278,9 +285,6 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowHistory((visible) => !visible)} className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
-            {showHistory ? 'Hide history' : 'Show history'}
-          </button>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" aria-label="Close chat">
             <HugeiconsIcon icon={Cancel01Icon} size={24} />
           </button>
@@ -290,7 +294,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
       {/* Chat Area */}
       <div className="relative flex flex-1 min-h-0 overflow-hidden">
         {showHistory && (
-          <aside className="absolute inset-y-0 left-0 z-20 w-[min(18rem,calc(100%-1rem))] overflow-y-auto border-r border-border/40 bg-card/95 p-4 shadow-xl backdrop-blur-md">
+          <aside className="absolute md:relative inset-y-0 left-0 z-20 h-full w-[min(18rem,calc(100%-1rem))] flex-shrink-0 overflow-y-auto border-r border-border/40 bg-card/95 p-4 shadow-xl backdrop-blur-md">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Chat history</h3>
               <div className="flex items-center gap-2">
