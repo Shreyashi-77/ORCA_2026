@@ -264,7 +264,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50">
+      <div className="relative z-30 flex items-center justify-between p-4 border-b border-border/40 bg-card/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
             <HugeiconsIcon icon={AiChat02Icon} size={20} className="text-white" />
@@ -288,9 +288,9 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
       </div>
 
       {/* Chat Area */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="relative flex flex-1 min-h-0 overflow-hidden">
         {showHistory && (
-          <aside className="w-72 shrink-0 overflow-y-auto border-r border-border/40 bg-card/30 p-4">
+          <aside className="absolute inset-y-0 left-0 z-20 w-[min(18rem,calc(100%-1rem))] overflow-y-auto border-r border-border/40 bg-card/95 p-4 shadow-xl backdrop-blur-md">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Chat history</h3>
               <div className="flex items-center gap-2">
@@ -322,7 +322,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
             {sessionId && <button onClick={() => void removeCurrentChat()} className="mt-5 text-xs text-red-500 hover:text-red-600">Delete current chat</button>}
           </aside>
         )}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+        <div className="relative z-0 flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
         {(geo.error || requestError) && (
           <div role="alert" className="max-w-4xl mx-auto rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
             {requestError || `Location error: ${geo.error}`}
@@ -371,7 +371,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = fa
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-card/80 backdrop-blur-md border-t border-border/40">
+      <div className="relative z-30 p-4 bg-card/80 backdrop-blur-md border-t border-border/40">
         <div className="max-w-4xl mx-auto relative">
           <input
             ref={inputRef}
