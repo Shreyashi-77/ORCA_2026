@@ -332,6 +332,35 @@ export async function chatFishery(
   );
 }
 
+export async function chatFisheryVoice(
+  audio: Blob,
+  lat: number,
+  lon: number,
+  sessionId?: string,
+  signal?: AbortSignal
+) {
+  const { userId, token } = await getUserIdAndToken();
+  const body = new FormData();
+
+  body.append("audio", audio, "orca-voice.webm");
+  body.append("lat", String(lat));
+  body.append("lon", String(lon));
+  body.append("user_id", userId);
+
+  if (sessionId) {
+    body.append("session_id", sessionId);
+  }
+
+  return request<ChatResponse>("/chat-fishery", {
+    method: "POST",
+    body,
+    signal,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 /* =========================================================
    CHAT SESSIONS
    ========================================================= */

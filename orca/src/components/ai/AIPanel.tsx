@@ -11,8 +11,10 @@ import {
   deleteChatSession,
   getChatSession,
   getChatSessions,
+  chatFisheryVoice,
   type ChatSession,
 } from '@/lib/api'
+import { VoiceChatOverlay } from './VoiceChatOverlay'
 
 interface Message {
   id: string;
@@ -24,16 +26,18 @@ interface AIPanelProps {
   isOpen: boolean;
   onClose: () => void;
   initialQuery?: string;
+  voiceChatOpen?: boolean;
+  onVoiceChatClose?: () => void;
 }
 
-export function AIPanel({ isOpen, onClose, initialQuery = '' }: AIPanelProps) {
+export function AIPanel({ isOpen, onClose, initialQuery = '', voiceChatOpen = false, onVoiceChatClose }: AIPanelProps) {
   const { t } = useLanguage()
   const geo = useGeolocation()
 
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState(initialQuery)
   const [isTyping, setIsTyping] = useState(false)
-  const [isListening, setIsListening] = useState(false)
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(voiceChatOpen)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem('orca_session_id'))
   const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -41,8 +45,11 @@ export function AIPanel({ isOpen, onClose, initialQuery = '' }: AIPanelProps) {
   const [showHistory, setShowHistory] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const recognitionRef = useRef<any>(null)
   const requestControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    setIsVoiceChatOpen(voiceChatOpen)
+  }, [voiceChatOpen])
 
   useEffect(() => {
     if (isOpen) {
@@ -216,47 +223,46 @@ export function AIPanel({ isOpen, onClose, initialQuery = '' }: AIPanelProps) {
   }
 
   const toggleVoiceInput = () => {
-    if (isListening) {
-      recognitionRef.current?.stop()
-      setIsListening(false)
-      return
+    setIsVoiceChatOpen(true)
+  }
+
+  const handleVoiceSubmit = async (audio: Blob) => {
+    if (geo.lat === null || geo.lon === null) {
+      throw new Error(geo.error || 'Your location is required before ORCA can prepare a local marine advisory.')
     }
 
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert("Your browser doesn't support voice input.")
-      return
+    let activeSessionId = sessionId
+    if (!activeSessionId) {
+      const session = await createChatSession()
+      activeSessionId = session.session_id
+      setSessionId(activeSessionId)
+      localStorage.setItem('orca_session_id', activeSessionId)
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-    recognition.continuous = false
-    recognition.interimResults = true
-
-    recognition.onresult = (event: any) => {
-      let finalTranscript = ''
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
-        }
-      }
-      if (finalTranscript) {
-        setInputValue(finalTranscript)
-        handleSend(finalTranscript)
-      }
-    }
-
-    recognition.onerror = () => setIsListening(false)
-    recognition.onend = () => setIsListening(false)
-
-    recognitionRef.current = recognition
-    recognition.start()
-    setIsListening(true)
+    const response = await chatFisheryVoice(audio, geo.lat, geo.lon, activeSessionId)
+    setSessionId(response.session_id)
+    localStorage.setItem('orca_session_id', response.session_id)
+    setMessages((current) => [
+      ...current,
+      { id: `${Date.now()}-voice-user`, role: 'user', content: 'Voice message' },
+      { id: `${Date.now()}-voice-reply`, role: 'assistant', content: response.reply },
+    ])
+    return response
   }
 
   if (!isOpen) return null
 
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <VoiceChatOverlay
+        isOpen={isVoiceChatOpen}
+        onExit={() => {
+          setIsVoiceChatOpen(false)
+          onVoiceChatClose?.()
+        }}
+        onSubmit={handleVoiceSubmit}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/40 bg-card/50">
         <div className="flex items-center gap-3">
@@ -380,8 +386,7 @@ export function AIPanel({ isOpen, onClose, initialQuery = '' }: AIPanelProps) {
           />
           <button
             onClick={toggleVoiceInput}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center transition-colors
-                       ${isListening ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20 animate-pulse' : 'text-muted-foreground hover:bg-muted/50'}`}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground transition-colors hover:bg-muted/50"
           >
             <HugeiconsIcon icon={Mic01Icon} size={20} />
           </button>

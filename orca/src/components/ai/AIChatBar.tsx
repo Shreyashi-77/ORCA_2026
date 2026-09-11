@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, useCallback, type FormEvent, type KeyboardEvent } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { AiChat02Icon, ArrowRight01Icon, Mic01Icon } from '@hugeicons/core-free-icons'
 import { useLanguage } from '@/lib/i18n'
@@ -8,8 +8,7 @@ export function AIChatBar() {
   const { t } = useLanguage()
   const [message, setMessage] = useState('')
   const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const recognitionRef = useRef<any>(null)
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false)
 
   const handleSubmit = useCallback(() => {
     setIsPanelOpen(true) // Open panel even if empty, but initialQuery handles passing the text
@@ -34,47 +33,8 @@ export function AIChatBar() {
   )
 
   const toggleVoiceInput = () => {
-    if (isListening) {
-      recognitionRef.current?.stop()
-      setIsListening(false)
-      return
-    }
-
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert("Your browser doesn't support voice input.")
-      return
-    }
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
-    recognition.continuous = false
-    recognition.interimResults = true
-
-    recognition.onresult = (event: any) => {
-      let finalTranscript = ''
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
-        }
-      }
-      if (finalTranscript) {
-        setMessage(finalTranscript)
-        // Automatically open panel and send when done speaking
-        setIsPanelOpen(true)
-      }
-    }
-
-    recognition.onerror = () => {
-      setIsListening(false)
-    }
-
-    recognition.onend = () => {
-      setIsListening(false)
-    }
-
-    recognitionRef.current = recognition
-    recognition.start()
-    setIsListening(true)
+    setIsPanelOpen(true)
+    setIsVoiceChatOpen(true)
   }
 
   return (
@@ -109,7 +69,7 @@ export function AIChatBar() {
           onClick={toggleVoiceInput}
           className={`flex items-center justify-center w-10 h-10 shrink-0 rounded-lg
                      transition-all focus-visible:outline-2 focus-visible:outline-primary active:scale-95
-                     ${isListening ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                     text-muted-foreground hover:text-foreground hover:bg-muted/50`}
           aria-label="Voice input"
         >
           <HugeiconsIcon icon={Mic01Icon} size={20} />
@@ -131,8 +91,11 @@ export function AIChatBar() {
       {/* Full Page AI Panel */}
       <AIPanel 
         isOpen={isPanelOpen} 
+        voiceChatOpen={isVoiceChatOpen}
+        onVoiceChatClose={() => setIsVoiceChatOpen(false)}
         onClose={() => {
           setIsPanelOpen(false)
+          setIsVoiceChatOpen(false)
           setMessage('') // Reset when closed
         }} 
         initialQuery={message} 
