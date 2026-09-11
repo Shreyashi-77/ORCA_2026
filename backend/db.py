@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -71,10 +70,8 @@ def connect_mongodb():
 # Try to connect, but NEVER crash the backend
 connect_mongodb()
 
-
-# ============================================================
 # CHAT SESSIONS
-# ============================================================
+
 
 def get_user_sessions_db(user_id: str) -> dict:
     """Fetch all chat sessions belonging to a user."""

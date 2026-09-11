@@ -143,7 +143,9 @@ function CustomZoomControls({
         <button
           onClick={onToggleFullscreen}
           className="w-12 h-12 flex items-center justify-center rounded-2xl bg-card/80 backdrop-blur-md shadow-xl border border-border/50 text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
-          aria-label={isFullscreen ? "Exit fullscreen map" : "View map fullscreen"}
+          aria-label={
+            isFullscreen ? "Exit fullscreen map" : "View map fullscreen"
+          }
           title={isFullscreen ? "Exit fullscreen map" : "View map fullscreen"}
         >
           {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
@@ -431,7 +433,7 @@ export function MapView({
 
               layer.on({
                 click: () => {
-                  console.log("🔥 PFZ CLICKED:", pfzId);
+                  console.log(" PFZ CLICKED:", pfzId);
 
                   if (pfzId) {
                     onPfzLineClick?.(pfzId);
