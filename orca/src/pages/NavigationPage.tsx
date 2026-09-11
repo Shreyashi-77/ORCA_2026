@@ -65,6 +65,29 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
   const [pfzLoading, setPfzLoading] = useState(false);
 
   const DEMO_PFZ_DATA: Record<string, any> = {
+    "pfzlines.49": {
+      pfz_id: "PFZ-49",
+
+      // Actual point ON PFZ-49
+      nearest_point: {
+        latitude: 16.07196231,
+        longitude: 81.83858333,
+      },
+
+      // Based on PFZ-49 Length property
+      distance_km: 60.3,
+
+      safety: {
+        overall_status: "caution",
+        warnings: ["Moderate wave conditions"],
+      },
+
+      weather: {
+        wind: "20 km/h",
+        waves: "1.9 m",
+        temp: "28°C",
+      },
+    },
     "pfzlines.22": {
       pfz_id: "PFZ-22",
       nearest_point: {
