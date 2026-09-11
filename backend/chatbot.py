@@ -36,7 +36,7 @@ except ImportError:
     gTTS = None
 
 try:
-    from faster_whisper import WhisperModel # type: ignore
+    from faster_whisper import WhisperModel  # type: ignore
 
     stt_model = WhisperModel(
         "tiny", device="cpu", compute_type="int8", cpu_threads=2
@@ -142,7 +142,7 @@ def execute_with_fallback(system_instruction: str, gemini_contents: list):
     last_err = None
     for _ in range(len(API_KEYS)):
         client = get_next_client()
-        for model_name in ["gemini-3.7-flash", "gemini-3.8-flash"]:
+        for model_name in ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.8-flash"]:
             try:
                 response = client.models.generate_content(
                     model=model_name,
@@ -207,13 +207,14 @@ def find_nearest_pfz(latitude: float, longitude: float, data: dict):
                 coords = (
                     list(geom.coords)
                     if geom.geom_type != "Polygon"
-                    else list(geom.exterior.coords) # type: ignore
+                    else list(geom.exterior.coords)  # type: ignore
                 )
             elif geom.geom_type in ("MultiPoint", "MultiLineString"):
-                coords = [point for part in geom.geoms for point in part.coords] # type: ignore
+                # type: ignore
+                coords = [point for part in geom.geoms for point in part.coords]
             elif geom.geom_type == "MultiPolygon":
                 coords = [
-                    point for part in geom.geoms for point in part.exterior.coords] # type: ignore
+                    point for part in geom.geoms for point in part.exterior.coords]  # type: ignore
             else:
                 coords = []
             for lon2, lat2 in coords:
@@ -261,7 +262,7 @@ async def lifespan(app: FastAPI):
             bathymetry_file=None,
         )
     except Exception:
-        geo_checker = None # type: ignore
+        geo_checker = None  # type: ignore
     yield
     if geo_checker and getattr(geo_checker, "bathymetry", None):
         assert geo_checker.bathymetry is not None
@@ -375,19 +376,19 @@ def pfz_distance(
             coords = list(geom.coords)
 
         elif geom.geom_type == "Polygon":
-            coords = list(geom.exterior.coords) # type: ignore
+            coords = list(geom.exterior.coords)  # type: ignore
 
         elif geom.geom_type in ("MultiPoint", "MultiLineString"):
             coords = [
                 point
-                for part in geom.geoms # type: ignore
+                for part in geom.geoms  # type: ignore
                 for point in part.coords
             ]
 
         elif geom.geom_type == "MultiPolygon":
             coords = [
                 point
-                for part in geom.geoms # type: ignore
+                for part in geom.geoms  # type: ignore
                 for point in part.exterior.coords
             ]
 
@@ -528,13 +529,13 @@ def boundaries(boundary_type: str):
 @app.get("/boundaries/{boundary_type}")
 def get_boundary(boundary_type: str):
     if boundary_type == "mpas":
-        dataframe = boundary_checker.mpas # type: ignore
+        dataframe = boundary_checker.mpas  # type: ignore
 
     elif boundary_type == "eez":
-        dataframe = boundary_checker.eez # type: ignore
+        dataframe = boundary_checker.eez  # type: ignore
 
     elif boundary_type == "imbl":
-        dataframe = boundary_checker.imbl # type: ignore
+        dataframe = boundary_checker.imbl  # type: ignore
 
     else:
         raise HTTPException(
