@@ -1,15 +1,4 @@
-import {
-  ArrowLeft02Icon,
-  Location01Icon,
-  Navigation03Icon,
-  Compass01Icon,
-  Layers01Icon,
-} from "@hugeicons/core-free-icons";
-
-import { HugeiconsIcon } from "@hugeicons/react";
-
 import { MapView } from "@/components/map/MapView";
-import { AIChatBar } from "@/components/ai/AIChatBar";
 import { LiveConditionsBar } from "@/components/conditions/LiveConditionsBar";
 
 import { useOrcaAPI } from "@/hooks/useOrcaAPI";
@@ -20,7 +9,6 @@ import {
   getRoute,
   getPFZLines,
   getPFZDistance,
-  getFullReport,
   type RouteResponse,
 } from "@/lib/api";
 
@@ -28,12 +16,9 @@ import { useBoundaries } from "@/hooks/useBoundaries";
 
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n";
+import { ChevronDown } from "lucide-react";
 
-interface NavigationPageProps {
-  onBack?: () => void;
-}
-
-export function NavigationPage({ onBack }: NavigationPageProps) {
+export function NavigationPage() {
   const { t } = useLanguage();
 
   const geo = useGeolocation();
@@ -61,6 +46,7 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
   const [pfzConditions, setPfzConditions] = useState<any | null>(null);
 
   const [isSOSOpen, setIsSOSOpen] = useState(false);
+  const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
 
   const [pfzLoading, setPfzLoading] = useState(false);
 
@@ -279,6 +265,8 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
       },
     },
   };
+
+  void DEMO_PFZ_DATA;
   /*
    * Load all PFZ lines.
    */
@@ -316,64 +304,50 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
       setSelectedPfzId(data.nearest_pfz.pfz_id);
 
       setSelectedPfz(data.nearest_pfz);
+
+      if (geo.lat != null && geo.lon != null) {
+        getRoute(
+          geo.lat,
+          geo.lon,
+          data.nearest_pfz.nearest_point.latitude,
+          data.nearest_pfz.nearest_point.longitude,
+        )
+          .then(setRouteData)
+          .catch((error) => {
+            console.error("Initial PFZ route calculation failed:", error);
+          });
+      }
     }
-  }, [data, selectedPfzId]);
+  }, [data, geo.lat, geo.lon, selectedPfzId]);
 
   /*
    * Handle clicking a PFZ line on the map.
    */
   const handlePfzLineClick = async (pfzId: string) => {
-    console.log("🎯 DEMO PFZ SELECTED:", pfzId);
-
-    const demo = DEMO_PFZ_DATA[pfzId];
-
-    if (!demo) {
-      console.warn("No demo data for this PFZ:", pfzId);
-      return;
-    }
-
     setPfzLoading(true);
     setSelectedPfzId(pfzId);
 
-    // Show demo information
-    const selectedData = {
-      pfz_id: demo.pfz_id,
-      distance_km: demo.distance_km,
-      nearest_point: demo.nearest_point,
-      properties: {},
-    };
-
-    setSelectedPfz(selectedData);
-
-    setPfzConditions({
-      safety: demo.safety,
-      weather: demo.weather,
-    });
-
-    // Route to the ACTUAL PFZ coordinate
-    if (geo.lat != null && geo.lon != null) {
-      try {
-        const route = await getRoute(
-          geo.lat,
-          geo.lon,
-          demo.nearest_point.latitude,
-          demo.nearest_point.longitude,
-        );
-
-        console.log("🛥️ Route destination:", {
-          latitude: demo.nearest_point.latitude,
-          longitude: demo.nearest_point.longitude,
-        });
-
-        console.log("🛥️ Route:", route);
-
-        setRouteData(route);
-      } catch (error) {
-        console.error("❌ Route calculation failed:", error);
+    try {
+      if (geo.lat == null || geo.lon == null) {
+        throw new Error("Current location is unavailable.");
       }
-    }
 
-    setPfzLoading(false);
+      const selectedData = await getPFZDistance(geo.lat, geo.lon, pfzId);
+      setSelectedPfz(selectedData);
+      setPfzConditions(null);
+
+      const route = await getRoute(
+        geo.lat,
+        geo.lon,
+        selectedData.nearest_point.latitude,
+        selectedData.nearest_point.longitude,
+      );
+      setRouteData(route);
+    } catch (error) {
+      console.error("PFZ selection or route calculation failed:", error);
+    } finally {
+      setPfzLoading(false);
+    }
   };
   const pfzDistance = selectedPfz?.distance_km ?? null;
 
@@ -470,237 +444,91 @@ export function NavigationPage({ onBack }: NavigationPageProps) {
       {/* ================= FLOATING UI ================= */}
 
       <div className="relative z-10 flex-1 flex flex-col p-3 md:p-6 gap-4 h-full pointer-events-none">
-        {/* ================= TOP BAR ================= */}
-
-        <div className="flex gap-2 w-full pointer-events-auto">
-          {/* Back Button */}
-
-          <button
-            onClick={onBack}
-            className="flex items-center justify-center w-12 h-12 rounded-2xl bg-card border border-border/40 shadow-lg text-foreground hover:bg-accent transition-colors"
-          >
-            <HugeiconsIcon icon={ArrowLeft02Icon} size={24} />
-          </button>
-
-          {/* Status Card */}
-
-          <div className="flex-1 bg-navy/90 dark:bg-card border border-border/40 rounded-2xl shadow-lg p-3 md:p-4 flex flex-col gap-3 text-white dark:text-foreground backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-xs text-white/70 dark:text-muted-foreground font-medium">
-                  Going to
-                </span>
-
-                <span className="text-lg md:text-xl font-bold">
-                  {selectedPfz?.pfz_id || "PFZ"}
-                </span>
-              </div>
-
-              <button
-                onClick={() => setIsSOSOpen(true)}
-                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition-colors"
-              >
-                SOS
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/10 dark:border-border/40">
-              {/* Distance */}
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-white/70 dark:text-muted-foreground mb-0.5">
-                  <HugeiconsIcon icon={Location01Icon} size={14} />
-
-                  <span className="text-[10px] md:text-xs">
-                    {t("distance_left")}
-                  </span>
-                </div>
-
-                <span className="text-sm md:text-base font-semibold">
-                  {pfzDistance != null
-                    ? `${pfzDistance.toFixed(1)} km`
-                    : "-- km"}
-                </span>
-              </div>
-
-              {/* ETA */}
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-white/70 dark:text-muted-foreground mb-0.5">
-                  <HugeiconsIcon icon={Navigation03Icon} size={14} />
-
-                  <span className="text-[10px] md:text-xs">{t("eta")}</span>
-                </div>
-
-                <span className="text-sm md:text-base font-semibold">
-                  {pfzDistance != null
-                    ? `${etaHoursInt}h ${etaMinsInt}m`
-                    : "--h --m"}
-                </span>
-              </div>
-
-              {/* Arrival */}
-
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1 text-white/70 dark:text-muted-foreground mb-0.5">
-                  <HugeiconsIcon icon={Location01Icon} size={14} />
-
-                  <span className="text-[10px] md:text-xs">Arrival Time</span>
-                </div>
-
-                <span className="text-sm md:text-base font-semibold">
-                  --:--
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= PFZ INFO ================= */}
-
-        {selectedPfz && (
-          <div className="pointer-events-auto bg-card/95 backdrop-blur-md rounded-2xl shadow-lg border border-border/40 p-4 max-w-md">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Selected PFZ</p>
-
-                <h3 className="font-bold text-lg">{selectedPfz.pfz_id}</h3>
-              </div>
-
-              {pfzLoading && (
-                <span className="text-xs text-primary animate-pulse">
-                  Checking...
-                </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-muted/50 p-3">
-                <p className="text-xs text-muted-foreground">Distance</p>
-
-                <p className="font-semibold">
-                  {selectedPfz.distance_km != null
-                    ? `${selectedPfz.distance_km.toFixed(1)} km`
-                    : "--"}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-muted/50 p-3">
-                <p className="text-xs text-muted-foreground">ETA</p>
-
-                <p className="font-semibold">
-                  {pfzDistance != null
-                    ? `${etaHoursInt}h ${etaMinsInt}m`
-                    : "--"}
-                </p>
-              </div>
-            </div>
-
-            {/* Safety */}
-
-            {pfzConditions?.safety && (
-              <div className="mt-3 rounded-xl border border-border/40 p-3">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Safety Status
-                </p>
-
-                <p className="font-semibold">
-                  {pfzConditions.safety.status || "Available"}
-                </p>
-
-                {pfzConditions.safety.warnings?.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {pfzConditions.safety.warnings
-                      .slice(0, 3)
-                      .map((warning: string, index: number) => (
-                        <p key={index} className="text-xs text-destructive">
-                          ⚠ {warning}
-                        </p>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Weather */}
-
-            {pfzConditions?.weather && (
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  🌬 Wind:
-                  <strong className="ml-1">
-                    {pfzConditions.weather.wind ?? "--"}
-                  </strong>
-                </div>
-
-                <div>
-                  🌊 Waves:
-                  <strong className="ml-1">
-                    {pfzConditions.weather.waves ?? "--"}
-                  </strong>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= MAP CONTROLS ================= */}
-
-        <div className="absolute right-4 md:right-8 top-[30%] flex flex-col gap-3 pointer-events-auto">
-          <button className="w-10 h-10 md:w-12 md:h-12 bg-card rounded-full shadow-lg border border-border/40 flex items-center justify-center text-foreground hover:bg-accent transition-colors">
-            <HugeiconsIcon
-              icon={Compass01Icon}
-              size={20}
-              className="md:w-6 md:h-6 text-red-500"
-            />
-          </button>
-
-          <button className="w-10 h-10 md:w-12 md:h-12 bg-card rounded-full shadow-lg border border-border/40 flex items-center justify-center text-foreground hover:bg-accent transition-colors">
-            <HugeiconsIcon
-              icon={Layers01Icon}
-              size={20}
-              className="md:w-6 md:h-6"
-            />
-          </button>
-
-          <button
-            onClick={() => {
-              if (geo.lat != null && geo.lon != null) {
-                // MapView already receives
-                // the current user location.
-              }
-            }}
-            className="w-10 h-10 md:w-12 md:h-12 bg-card rounded-full shadow-lg border border-border/40 flex items-center justify-center text-foreground hover:bg-accent transition-colors"
-          >
-            <HugeiconsIcon
-              icon={Location01Icon}
-              size={20}
-              className="md:w-6 md:h-6 text-blue-500"
-            />
-          </button>
-        </div>
-
         {/* ================= BOTTOM ================= */}
 
         <div className="mt-auto flex flex-col gap-4 w-full pointer-events-auto">
-          <div className="bg-card/90 backdrop-blur-md rounded-3xl shadow-lg border border-border/40 p-4 md:p-6 shrink-0">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-foreground">Live Conditions</h3>
-
-              <button className="text-xs text-primary font-medium flex items-center gap-1">
-                View More &gt;
+          {isNavigationCollapsed ? (
+            <div className="relative rounded-3xl border border-border/40 bg-card/70 p-3 shadow-lg backdrop-blur-xl supports-backdrop-filter:bg-card/55">
+              <div className="grid grid-cols-3 gap-3 pr-10">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("distance_left")}</p>
+                  <p className="font-semibold">{pfzDistance != null ? `${pfzDistance.toFixed(1)} km` : "-- km"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("eta")}</p>
+                  <p className="font-semibold">{pfzDistance != null ? `${etaHoursInt}h ${etaMinsInt}m` : "--h --m"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Arrival Time</p>
+                  <p className="font-semibold">--:--</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsNavigationCollapsed(false)}
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border/50 bg-background/40 text-foreground transition-colors hover:bg-background/70"
+                aria-label="Expand navigation details"
+                title="Expand navigation details"
+              >
+                <ChevronDown className="rotate-180" size={18} />
               </button>
             </div>
+          ) : (
+            <div className="rounded-3xl border border-border/40 bg-card/70 p-4 shadow-lg backdrop-blur-xl supports-backdrop-filter:bg-card/55 md:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Navigating to</p>
+                  <h3 className="font-semibold text-foreground">
+                    {selectedPfz?.pfz_id || "Nearest PFZ"}
+                  </h3>
+                </div>
 
-            <LiveConditionsBar
-              safety={pfzConditions?.safety || data?.safety}
-              weather={pfzConditions?.weather || data?.weather}
-            />
-          </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsSOSOpen(true)}
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition-colors"
+                  >
+                    SOS
+                  </button>
+                  <button
+                    onClick={() => setIsNavigationCollapsed(true)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border/50 bg-background/40 text-foreground transition-colors hover:bg-background/70"
+                    aria-label="Collapse navigation details"
+                    title="Collapse navigation details"
+                  >
+                    <ChevronDown size={18} />
+                  </button>
+                </div>
+              </div>
 
-          <div className="shrink-0 pb-2">
-            <AIChatBar />
-          </div>
+              <div className="grid grid-cols-3 gap-3 mb-5 border-y border-border/40 py-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("distance_left")}</p>
+                  <p className="font-semibold">{pfzDistance != null ? `${pfzDistance.toFixed(1)} km` : "-- km"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("eta")}</p>
+                  <p className="font-semibold">{pfzDistance != null ? `${etaHoursInt}h ${etaMinsInt}m` : "--h --m"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Arrival Time</p>
+                  <p className="font-semibold">--:--</p>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-semibold text-foreground">Live Conditions</h3>
+
+                <button className="text-xs text-primary font-medium flex items-center gap-1">
+                  View More &gt;
+                </button>
+              </div>
+
+              <LiveConditionsBar
+                safety={pfzConditions?.safety || data?.safety}
+                weather={pfzConditions?.weather || data?.weather}
+              />
+            </div>
+          )}
         </div>
       </div>
 

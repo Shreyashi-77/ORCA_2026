@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useOrcaAPI } from '@/hooks/useOrcaAPI'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Alert02Icon, Notification01Icon, Alert01Icon, InformationCircleIcon, Tick02Icon } from '@hugeicons/core-free-icons'
+import { Alert02Icon, Notification01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 
 export function AlertsPage() {
-  const { t } = useLanguage()
+  useLanguage()
   const geo = useGeolocation()
   const { data: apiData } = useOrcaAPI(geo.lat, geo.lon)
 
@@ -70,7 +70,7 @@ export function AlertsPage() {
       
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/20">
+        <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/20">
           <HugeiconsIcon icon={Notification01Icon} size={24} className="text-white" />
         </div>
         <div>

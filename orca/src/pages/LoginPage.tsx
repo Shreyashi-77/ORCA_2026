@@ -26,7 +26,10 @@ const languages = [
 ];
 
 interface LoginPageProps {
-  onLogin: (user: { fullName: string; email: string }, language: string) => void;
+  onLogin: (
+    user: { fullName: string; username: string; email: string },
+    language: string
+  ) => void;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -100,6 +103,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       onLogin(
         {
           fullName: user.displayName || fullName || "",
+          username: (user.displayName || fullName || user.email || email).split("@")[0],
           email: user.email || email,
         },
         language
@@ -164,6 +168,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       onLogin(
         {
           fullName: user.displayName || "",
+          username: (user.displayName || user.email || "").split("@")[0],
           email: user.email || "",
         },
         language

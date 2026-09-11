@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Alert02Icon, Cancel01Icon, SatelliteIcon, SignalIcon } from '@hugeicons/core-free-icons'
+import { Alert02Icon, Cancel01Icon, SignalIcon } from '@hugeicons/core-free-icons'
 
 interface SOSModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ export function SOSModal({ isOpen, onClose }: SOSModalProps) {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] bg-red-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-200 bg-red-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300">
       
       <div className="absolute top-6 right-6">
         <button 

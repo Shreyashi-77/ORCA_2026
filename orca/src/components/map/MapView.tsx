@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -13,7 +13,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { cn } from "@/lib/utils";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { LocateFixed, Maximize2, Minimize2 } from "lucide-react";
 
 // Custom Leaflet icons to preserve the premium aesthetic
 const createUserIcon = () => {
@@ -95,8 +95,11 @@ function MapController({
   pfzLocations?: { location: Location }[];
 }) {
   const map = useMap();
+  const hasInitializedView = useRef(false);
 
   useEffect(() => {
+    if (hasInitializedView.current) return;
+
     if (userLocation && pfzLocations && pfzLocations.length > 0) {
       // Create bounds containing user and all PFZs
       const bounds = L.latLngBounds(
@@ -114,6 +117,10 @@ function MapController({
         [pfzLocations[0].location.lat, pfzLocations[0].location.lon],
         11,
       );
+    }
+
+    if (userLocation || (pfzLocations && pfzLocations.length > 0)) {
+      hasInitializedView.current = true;
     }
   }, [map, userLocation, pfzLocations]);
 
@@ -135,7 +142,11 @@ function MapSizeController({ isFullscreen }: { isFullscreen: boolean }) {
 function CustomZoomControls({
   isFullscreen = false,
   onToggleFullscreen,
-}: Pick<MapViewProps, "isFullscreen" | "onToggleFullscreen">) {
+  userLocation,
+}: Pick<
+  MapViewProps,
+  "isFullscreen" | "onToggleFullscreen" | "userLocation"
+>) {
   const map = useMap();
   return (
     <div className="absolute top-6 right-6 flex flex-col gap-2 z-400 pointer-events-auto">
@@ -184,6 +195,18 @@ function CustomZoomControls({
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
+      {userLocation && (
+        <button
+          onClick={() =>
+            map.setView([userLocation.lat, userLocation.lon], map.getZoom())
+          }
+          className="w-12 h-12 flex items-center justify-center rounded-2xl bg-card/80 backdrop-blur-md shadow-xl border border-border/50 text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+          aria-label="Center on my location"
+          title="Center on my location"
+        >
+          <LocateFixed size={20} />
+        </button>
+      )}
     </div>
   );
 }
@@ -340,6 +363,7 @@ export function MapView({
         <CustomZoomControls
           isFullscreen={isFullscreen}
           onToggleFullscreen={onToggleFullscreen}
+          userLocation={userLocation}
         />
 
         {userLocation && userIcon && (

@@ -43,9 +43,11 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         // User is authenticated
+        const email = firebaseUser.email || "";
         setUser({
           fullName: firebaseUser.displayName || "",
-          email: firebaseUser.email || "",
+          username: firebaseUser.displayName || email.split("@")[0],
+          email,
         });
       } else {
         // User is not authenticated

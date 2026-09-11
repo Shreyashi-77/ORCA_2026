@@ -1,6 +1,6 @@
 import { ConditionItem } from './ConditionItem'
 import { Separator } from '@/components/ui/separator'
-import { ThermometerIcon, WavesIcon, Alert02Icon, Leaf02Icon, WindIcon } from '@hugeicons/core-free-icons'
+import { ThermometerIcon, WavesIcon, Alert02Icon, WindIcon } from '@hugeicons/core-free-icons'
 import type { SafetyCheckResponse, WeatherData } from '@/lib/api'
 import { useLanguage } from '@/lib/i18n'
 

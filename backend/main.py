@@ -481,6 +481,76 @@ def pfz_lines():
     return get_pfz_data()
 
 
+@app.get("/pfz-distance")
+def pfz_distance(
+    latitude: float = Query(..., ge=-90, le=90),
+    longitude: float = Query(..., ge=-180, le=180),
+    pfz_id: str = Query(...),
+):
+    selected_feature = next(
+        (
+            feature
+            for feature in get_pfz_data().get("features", [])
+            if str(feature.get("id")) == str(pfz_id)
+        ),
+        None,
+    )
+
+    if selected_feature is None:
+        raise HTTPException(status_code=404, detail="PFZ not found.")
+
+    geometry = selected_feature.get("geometry")
+    if not geometry:
+        raise HTTPException(status_code=404, detail="PFZ geometry unavailable.")
+
+    coords = extract_coords(shape(geometry))
+    if not coords:
+        raise HTTPException(status_code=404, detail="PFZ geometry has no coordinates.")
+
+    nearest_lon, nearest_lat = min(
+        coords,
+        key=lambda point: geod.inv(longitude, latitude, point[0], point[1])[2],
+    )
+    distance_m = geod.inv(longitude, latitude, nearest_lon, nearest_lat)[2]
+
+    return {
+        "pfz_id": selected_feature.get("id"),
+        "distance_km": round(distance_m / 1000, 3),
+        "nearest_point": {
+            "latitude": round(nearest_lat, 6),
+            "longitude": round(nearest_lon, 6),
+        },
+        "properties": selected_feature.get("properties", {}),
+    }
+
+
+@app.get("/route")
+def route(
+    start_lat: float = Query(..., ge=-90, le=90),
+    start_lon: float = Query(..., ge=-180, le=180),
+    end_lat: float = Query(..., ge=-90, le=90),
+    end_lon: float = Query(..., ge=-180, le=180),
+):
+    distance_m = geod.inv(start_lon, start_lat, end_lon, end_lat)[2]
+    distance_km = distance_m / 1000
+    steps = max(2, min(50, int(distance_km / 2) + 1))
+
+    waypoints = [
+        {
+            "latitude": start_lat + (end_lat - start_lat) * fraction,
+            "longitude": start_lon + (end_lon - start_lon) * fraction,
+            "status": "safe",
+        }
+        for fraction in (index / (steps - 1) for index in range(steps))
+    ]
+
+    return {
+        "overall_status": "safe",
+        "distance_km": round(distance_km, 3),
+        "waypoints": waypoints,
+    }
+
+
 # ============================================================
 # MAP
 # ============================================================
