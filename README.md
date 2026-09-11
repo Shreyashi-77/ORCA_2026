@@ -1,4 +1,4 @@
-# ORCA — Oceanic Risk & Catch Assistance
+# ORCA — Ocean Risk & Conservation Assistant
 
 > An intelligent maritime assistance platform designed to help fishermen make safer, smarter, and more informed decisions at sea.
 
